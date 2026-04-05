@@ -1,18 +1,16 @@
 server:
   port: 8081
 
-
-#Database Connection
 spring:
-   datasource:
-     url: jdbc:mysql://localhost:3036/authApp
-     username: root
-     password: Inal@014!
+  datasource:
+    url: jdbc:mysql://localhost:3306/authApp
+    username: root
+    password: Inal@014!
 
-   jpa:
-     hibernate:
-       ddl-auto: update
-     properties:
-       hibernate:
-         dialect: org.hibernate.dialect.MySQL8Dialect
-       show-sql: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: true
