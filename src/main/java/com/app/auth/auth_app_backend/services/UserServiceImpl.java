@@ -1,9 +1,11 @@
 package com.app.auth.auth_app_backend.services;
 
+import com.app.auth.auth_app_backend.Exception.ResourceNotFoundException;
 import com.app.auth.auth_app_backend.dto.UserDto;
 import com.app.auth.auth_app_backend.entities.Provider;
 import com.app.auth.auth_app_backend.entities.User;
 import com.app.auth.auth_app_backend.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,10 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public UserDto FindByEmail(String email) {
+      if(!userRepository.existsByEmail(email)){
+          throw new ResourceNotFoundException("Can not find the email");
+      }
+
         return null;
     }
 
@@ -48,6 +54,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
+    @Transactional
     public Iterable<UserDto> getAllUsers() {
         return userRepository.findAll()
                 .stream()
