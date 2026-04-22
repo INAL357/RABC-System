@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
+import java.awt.*;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +28,7 @@ public class User {
     private String email;
     private String name;
     private String password;
+    private String Image;
 
     private boolean enable=true;
     private Instant createdAt = Instant.now();

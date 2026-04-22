@@ -16,12 +16,13 @@ public interface UserService {
     UserDto UpdateUser(UserDto userDto, String userId);
 
     //Delete user
-    UserDto deleteUser(String userId);
+    void deleteUser(String userId);
 
     //Search user
     Iterable<UserDto> getAllUsers();
 
-
+    //Get User ById
+    public UserDto getUserById(String UserId);
 
 
 
