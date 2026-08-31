@@ -1,4 +1,4 @@
-package com.app.auth.auth_app_backend.services;
+package com.app.auth.auth_app_backend.services.Impl;
 
 import com.app.auth.auth_app_backend.Exception.ResourceNotFoundException;
 import com.app.auth.auth_app_backend.dto.UserDto;
@@ -6,18 +6,18 @@ import com.app.auth.auth_app_backend.entities.Provider;
 import com.app.auth.auth_app_backend.entities.User;
 import com.app.auth.auth_app_backend.helper.UserHelper;
 import com.app.auth.auth_app_backend.repositories.UserRepository;
+import com.app.auth.auth_app_backend.services.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
 import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
 
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
@@ -84,5 +84,8 @@ public class UserServiceImpl implements UserService{
         User user = userRepository.findById(uId).orElseThrow(()->new ResourceNotFoundException("Given Id Not Found"));
 
         return modelMapper.map(user,UserDto.class);
+    }
+
+    public static class AuthServiceImpl {
     }
 }
