@@ -2,18 +2,14 @@ package com.app.auth.auth_app_backend.security;
 
 import com.app.auth.auth_app_backend.entities.Role;
 import com.app.auth.auth_app_backend.entities.User;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import org.springframework.stereotype.Service;
-
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.Signature;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.List;
@@ -21,8 +17,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Data
+@AllArgsConstructor
 @Service
-
 public class JwtService {
     private final SecretKey key;
 
@@ -51,7 +48,7 @@ public class JwtService {
     }
 
     //generate token method
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
 
         // returns the exact same global timestamp
         Instant now = Instant.now();
@@ -72,7 +69,7 @@ public class JwtService {
                 .claims(Map.of(
                         "email", user.getEmail(), // Useful client-facing identifier
                         "roles", roles,
-                        "typ", "access"           // Explicit token type tagging to prevent context-switching exploits
+                        "type", "access"           // Explicit token type tagging to prevent context-switching exploits
                 ))
 
         // Cryptographically sign the header and payload metadata using your secret key.
@@ -83,8 +80,51 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefershToken(){
-        return null;
+    public String generateRefreshToken(User user, String jti){
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .id(jti)
+                .subject(user.getId().toString())
+                .issuer(issuer)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(refreshTtlSeconds)))
+                .claim("type", "refresh")
+                .signWith(key,SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    //Method to parse the token
+    public Jws<Claims> parse(String token){
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+
+    }
+    public boolean isAccessToken(String token) {
+        Claims claims = parse(token).getPayload();
+        return "access".equals(claims.get("type", String.class));
+    }
+
+    public boolean isRefreshToken(String token) {
+        Claims claims = parse(token).getPayload();
+        return "refresh".equals(claims.get("type", String.class));
+    }
+
+    public UUID getUserId(String token) {
+        Claims c = parse(token).getPayload();
+        return UUID.fromString(c.getSubject());
+    }
+
+    public String getJTI(String token) {
+        return parse(token).getPayload().getId();
+    }
+
+    public List<String> getRoles(String token) {
+        Claims claims = parse(token).getPayload();
+        return (List<String>) claims.get("roles");
+    }
+
+    public String getEmail(String token) {
+        Claims claims = parse(token).getPayload();
+        return claims.get("email", String.class);
     }
 }
 

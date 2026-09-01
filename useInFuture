@@ -1,0 +1,23 @@
+Keep the JWT infrastructure
+
+These concepts don't change much:
+JwtService
+JWTAuthenticationFilter
+SecurityConfig
+TokenResponse
+access token
+refresh token
+token validation
+SecurityContext
+Change according to your project
+
+Your future application changes:
+User entity
+UserRepository
+roles
+permissions
+user status
+endpoints
+claims
+token expiration
+authentication rules
