@@ -8,7 +8,7 @@ import com.app.auth.auth_app_backend.entities.RefreshToken;
 import com.app.auth.auth_app_backend.entities.User;
 import com.app.auth.auth_app_backend.repositories.RefreshTokenRepository;
 import com.app.auth.auth_app_backend.repositories.UserRepository;
-import com.app.auth.auth_app_backend.security.JwtService;
+import com.app.auth.auth_app_backend.services.Impl.JwtService;
 import com.app.auth.auth_app_backend.services.AuthService;
 import com.app.auth.auth_app_backend.services.Impl.CookieService;
 import io.jsonwebtoken.JwtException;

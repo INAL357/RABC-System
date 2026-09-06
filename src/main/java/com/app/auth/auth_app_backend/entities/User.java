@@ -33,7 +33,8 @@ public class User implements UserDetails {
     private String email;
     private String name;
     private String password;
-    private String Image;
+    private String image;
+    private String providerId;
 
     private boolean enable=true;
     private Instant createdAt = Instant.now();
@@ -72,6 +73,8 @@ public class User implements UserDetails {
     public String getUsername() {
         return this.email;
     }
+
+
 
     @Override
     public boolean isAccountNonExpired() {

@@ -1,20 +1,31 @@
 package com.app.auth.auth_app_backend.config;
 
-import com.app.auth.auth_app_backend.security.JWTAuthenticationFilter;
+import com.app.auth.auth_app_backend.dto.ApiError;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.lang.Arrays;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -22,32 +33,85 @@ import java.util.Map;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JWTAuthenticationFilter JWTAuthenticationFilter;
+    private JWTAuthenticationFilter jwtAuthenticationFilter;
+    private AuthenticationSuccessHandler successHandler;
+
+    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter, AuthenticationSuccessHandler successHandler) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.successHandler = successHandler;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        http.csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults()).sessionManagement(sm -> sm.
+                        sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorizeHttpRequests ->
+                        authorizeHttpRequests.requestMatchers(AppConstants.AUTH_PUBLIC_URLS).permitAll()
+                                .requestMatchers(AppConstants.AUTH_ADMIN_URLS).hasRole(AppConstants.ADMIN_ROLE)
+                                .requestMatchers(AppConstants.AUTH_GUEST_URLS).hasRole(AppConstants.GUEST_ROLE)
+                                .anyRequest().authenticated()).oauth2Login(oauth2 -> oauth2.successHandler(successHandler).failureHandler(null)).logout(AbstractHttpConfigurer::disable).exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, e) -> {
+                    //error message
+//                    e.printStackTrace();
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    String message = e.getMessage();
+                    String error = (String) request.getAttribute("error");
+                    if (error != null) {
+                        message = error;
+                    }
+//                    Map<String, Object> errorMap = Map.of("message", message, "statusCode",404);
+                    var apiError = ApiError.of(HttpStatus.UNAUTHORIZED.value(), "Unauthorized Access", message, request.getRequestURI(), true);
+                    var objectMapper = new ObjectMapper();
+                    response.getWriter().write(objectMapper.writeValueAsString(apiError));
+                }).accessDeniedHandler((request, response, e) -> {
+
+                    response.setStatus(403);
+                    response.setContentType("application/json");
+                    String message = e.getMessage();
+                    String error = (String) request.getAttribute("error");
+                    if (error != null) {
+                        message = error;
+                    }
+                    var apiError = ApiError.of(HttpStatus.FORBIDDEN.value(), "Forbidden Access", message, request.getRequestURI(), true);
+                    var objectMapper = new ObjectMapper();
+                    response.getWriter().write(objectMapper.writeValueAsString(apiError));
+
+
+                })).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+
+        return http.build();
+
+    }
 
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                .sessionManagement(sm->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/c1/auth/register").permitAll()
-                        .requestMatchers("/api/c1/auth/login").permitAll()
-                        .anyRequest().authenticated()
-                )
-        .exceptionHandling(ex->ex.authenticationEntryPoint((request, response, auth ) -> {
-            auth.printStackTrace();;
-            response.setStatus(401);
-            response.setContentType("application/Json");
-            String message = "unauthorized access: "+auth.getMessage();
-            Map<String,String> errorMap = Map.of("message",message, "status",String.valueOf(401),"statuscode", Integer.toString(401));
-            var ObjectMapper = new ObjectMapper();
-            response.getWriter().write(ObjectMapper.writeValueAsString(errorMap));
-        }))
-                .addFilterBefore(JWTAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.front-end-url}") String corsUrls) {
+
+        String[] urls = corsUrls.trim().split(",");
+
+        var config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList(urls));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+
+
+    }
+
 }

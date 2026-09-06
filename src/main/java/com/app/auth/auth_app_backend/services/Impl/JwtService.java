@@ -1,4 +1,4 @@
-package com.app.auth.auth_app_backend.security;
+package com.app.auth.auth_app_backend.services.Impl;
 
 import com.app.auth.auth_app_backend.entities.Role;
 import com.app.auth.auth_app_backend.entities.User;
@@ -15,10 +15,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Data
-@AllArgsConstructor
 @Service
 public class JwtService {
     private final SecretKey key;
